@@ -20,7 +20,7 @@ class Classic_Sudoku:
         
 
 
-    def valid_position(self,  c, x, y):
+    def valid_position(self,  c:int, x:int, y:int):
         #check the provided x and y coordinates
         if x > (self.size - 1) or x < 0:
             raise ValueError(f"X value {x} is out of bounds 0 and {self.size - 1}.")
@@ -96,7 +96,7 @@ class Classic_Sudoku:
                     minimal_position.append((i,j))
         return random.choice(minimal_position)
 
-    def least_constraining_value(self, x, y):
+    def least_constraining_value(self, x:int, y:int):
         best_chars = []
         restrictions = 1000
         if self.grid[x][y] != 0:
@@ -179,16 +179,95 @@ class Classic_Sudoku:
         return sdk
 
 
-#Testing
 
-# Monster Sudoku
-print("Standard Sudoku:")
-monster_sudoku = Classic_Sudoku(monster=True)
-print(monster_sudoku)
 
-class KillerSufdoku(Classic_Sudoku):
-    def __init__(self, subgrid_size):
-        super().__init__(subgrid_size)
+#class meant to describe cages for killer sudoku
+class Cage:
+    def __init__(self, positions):
+        #positions is an array of x,  y coordinates and the value of the sudoku grid at position x y
+        self.positions = positions
+        self.size = len(positions)
+        self.sum = sum([z for x,y,z in self.positions])
+
+    def __str__(self):
+        s  = f"Sum:{self.sum}"
+        s+= f"\tLength:{self.size}"
+        s+= f"\t{self.positions}"
+        return s
+
+
+class KillerSudoku(Classic_Sudoku):
+    def __init__(self, monster:bool = False):
+        super().__init__(monster)
         self.cages =  []
+        #create 
+        self.free_positions = []
+        for i in range(0, self.size):
+            for j in range(0, self.size):
+                self.free_positions.append((i,j))
+        self.caging()
+
+    def get_free_position_beta(self):
+        return random.choice(self.free_positions)
 
     #TODO: Implement cages
+    def caging(self):
+        total_sum =  self.size * (self.size * (self.size + 1) / 2)
+        while total_sum > 0:
+            #pick a starting positions
+            active = True
+            free_values =  [ a for a in self.characters]
+            pos = random.choice(self.free_positions) if len(self.free_positions) > 1 else self.free_positions[0]
+            new_cage_positions = [(pos[0], pos[1], self.grid[pos[0]][pos[1]])]
+            self.free_positions.remove(pos)
+            free_values.remove(self.grid[pos[0]][pos[1]])
+
+            while active == True:
+                #check if there are any unused values(characters)left,  if not terminate caging
+                if len(free_values) == 0:
+                    active = False
+                    break
+                #neighbours of a cell, that aren't part of other cages and whose values don't appear in the current cage    
+                valid_positions = [ r for r in self.get_available_neighbours(pos[0], pos[1]) if self.grid[r[0]][r[1]] in free_values]
+                #if no valid positions are left, terminate
+                if len(valid_positions) == 0:
+                    active = False
+                    break
+                
+                pos = random.choice(valid_positions) if len(valid_positions) > 1 else valid_positions[0]
+                #update the cage positions, the free positions and the free values lists
+                new_cage_positions.append((pos[0], pos[1], self.grid[pos[0]][pos[1]]))
+                self.free_positions.remove(pos)
+                free_values.remove(self.grid[pos[0]][pos[1]])
+                #randomly interrupt the caging process, to create variety
+                if len(new_cage_positions) > 1:
+                    active = random.choice([True, False])
+            #create a new cage with the new cage positions
+            new_cage = Cage(new_cage_positions)
+            self.cages.append(new_cage)
+            total_sum-= new_cage.sum
+                
+            
+
+
+    #subroutine for getting the neighbours of a cell, that aren't part of other cages, only vertical or horizontal neighbours
+    def get_available_neighbours(self, x:int, y:int):
+        neighbours = [(x-1, y), (x+1, y), (x, y-1),(x, y+1)]
+        valid_neighbours = []
+        for n in neighbours:
+            if n[0] == -1 or n[1] == -1 or n[0] == self.size or n[1] == self.size or n not in self.free_positions:
+                continue
+            valid_neighbours.append(n)
+            
+        return valid_neighbours
+    
+    def __str__(self):
+        st =  super().__str__()
+        for cage in self.cages:
+            st+=f"{cage}\n"
+        return st
+
+
+#TEST
+k_s = KillerSudoku(monster=False)
+print(k_s) 
