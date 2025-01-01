@@ -17,6 +17,8 @@ class Classic_Sudoku:
             self.characters.append(i+1)
             self.grid.append([0] * self.size)
         self.CSP_filler()
+        self.undiscovered = []
+        self.prepare_board(20)
         
 
 
@@ -152,29 +154,43 @@ class Classic_Sudoku:
             charc = self.least_constraining_value(pos[0], pos[1])
             self.grid[pos[0]][pos[1]] = charc
             empty-=1
-
-
+    #prepare the sudoku board to be used 
+    def prepare_board(self, pairs):
+        #pairs of points to be hidden for the player
+        p = pairs
+        while p > 0:
+            x = random.randint(0, self.size-1)
+            y = random.randint(0, self.size-1)
+            while (x,y) in self.undiscovered:
+                x = random.randint(0, self.size-1)
+                y = random.randint(0, self.size-1)
+            self.undiscovered.append((x,y))
+            self.undiscovered.append(((self.size - 1) - x,(self.size - 1) -y))
+            p-=1
     #represent the sudoku grid as a string
     def __str__(self):
         sdk = ""
         for i in range(0, self.size):
             for j in range(0, self.size):
-                if self.grid[i][j] == 10:
-                    sdk+= " A |"
-                elif self.grid[i][j] == 11:
-                    sdk+= " B |"
-                elif self.grid[i][j] == 12:
-                    sdk+= " C |"
-                elif self.grid[i][j] == 13:
-                    sdk+= " D |"
-                elif self.grid[i][j] == 14:
-                    sdk+= " E |"
-                elif self.grid[i][j] == 15:
-                    sdk+= " F |"
-                elif self.grid[i][j] == 16:
-                    sdk+= " G |"
+                if (i,j) not in self.undiscovered:
+                    if self.grid[i][j] == 10:
+                        sdk+= " A |"
+                    elif self.grid[i][j] == 11:
+                        sdk+= " B |"
+                    elif self.grid[i][j] == 12:
+                        sdk+= " C |"
+                    elif self.grid[i][j] == 13:
+                        sdk+= " D |"
+                    elif self.grid[i][j] == 14:
+                        sdk+= " E |"
+                    elif self.grid[i][j] == 15:
+                        sdk+= " F |"
+                    elif self.grid[i][j] == 16:
+                        sdk+= " G |"
+                    else:
+                        sdk+= f" {self.grid[i][j]} |"
                 else:
-                    sdk+= f" {self.grid[i][j]} |"
+                    sdk+= "   |"
             sdk += "\n"
         return sdk
 
